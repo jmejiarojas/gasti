@@ -479,7 +479,7 @@ export default function Home() {
                             {category?.emoji ?? "✨"}
                           </span>
                           <div className="min-w-0">
-                            <p className="truncate text-sm font-medium">
+                            <p className="line-clamp-2 break-words text-sm font-medium leading-5">
                               {expense.description}
                             </p>
                             <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -662,7 +662,7 @@ export default function Home() {
                       className="grid gap-3 p-4 transition hover:bg-slate-50 dark:hover:bg-slate-800/60"
                       key={expense.id}
                     >
-                      <div className="flex items-start justify-between gap-3">
+                      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
                         <div className="flex min-w-0 gap-3">
                           <span
                             className={cn(
@@ -673,7 +673,7 @@ export default function Home() {
                             {category?.emoji ?? "✨"}
                           </span>
                           <div className="min-w-0">
-                            <h3 className="truncate font-semibold">
+                            <h3 className="line-clamp-2 break-words font-semibold leading-5">
                               {expense.description}
                             </h3>
                             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
