@@ -9,6 +9,7 @@ import {
   CreditCard,
   House,
   List,
+  MessageCircle,
   Moon,
   Plus,
   Sparkles,
@@ -40,6 +41,11 @@ type Category = {
   tone: string;
 };
 
+type QuickExpenseDraft = ExpenseForm & {
+  amountNumber: number;
+  originalText: string;
+};
+
 const STORAGE_KEY = "gasti.expenses";
 
 const categories: Category[] = [
@@ -64,6 +70,24 @@ const paymentMethods = [
   "Transferencia",
   "Yape",
 ];
+
+const categoryKeywords: Record<string, string[]> = {
+  Comida: ["almuerzo", "comida", "cena", "desayuno", "cafe", "menu", "pollo"],
+  Transporte: ["taxi", "bus", "metro", "uber", "cabify", "pasaje"],
+  Compras: ["mercado", "super", "tienda", "compra", "compras"],
+  Entretenimiento: ["cine", "juego", "netflix", "spotify", "salida"],
+  Salud: ["medicina", "farmacia", "doctor", "salud", "clinica"],
+  Servicios: ["luz", "agua", "internet", "telefono", "recibo"],
+  Hogar: ["casa", "hogar", "mueble", "limpieza"],
+};
+
+const paymentKeywords: Record<string, string[]> = {
+  Efectivo: ["efectivo", "cash"],
+  "Tarjeta debito": ["debito", "debito", "tarjeta"],
+  "Tarjeta credito": ["credito", "credit"],
+  Transferencia: ["transferencia", "transferi", "banco"],
+  Yape: ["yape", "yapee"],
+};
 
 const currencyFormatter = new Intl.NumberFormat("es-PE", {
   style: "currency",
@@ -111,6 +135,86 @@ function parseAmount(value: string) {
   }
 
   return cents / 100;
+}
+
+function normalizeText(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function findLabelByKeyword(
+  text: string,
+  keywordsByLabel: Record<string, string[]>,
+  fallback: string,
+) {
+  const normalizedText = normalizeText(text);
+  const match = Object.entries(keywordsByLabel).find(([, keywords]) => {
+    return keywords.some((keyword) => normalizedText.includes(keyword));
+  });
+
+  return match?.[0] ?? fallback;
+}
+
+function createQuickDescription(text: string, amountText: string) {
+  const wordsToRemove = [
+    amountText,
+    "s/",
+    "sol",
+    "soles",
+    "pen",
+    "gaste",
+    "gasto",
+    "gasté",
+    "en",
+    "con",
+    "pague",
+    "pagué",
+    ...Object.values(paymentKeywords).flat(),
+  ];
+
+  const cleanedText = wordsToRemove.reduce((currentText, word) => {
+    return currentText.replace(new RegExp(`\\b${escapeRegExp(word)}\\b`, "gi"), " ");
+  }, text);
+
+  return (
+    cleanedText
+      .replace(/\s+/g, " ")
+      .trim()
+      .replace(/^./, (letter) => letter.toUpperCase()) || "Gasto rapido"
+  );
+}
+
+function parseQuickExpense(text: string): QuickExpenseDraft | null {
+  const amountMatch = text.match(/\d+(?:[.,]\d{1,2})?/);
+  const amountText = amountMatch?.[0] ?? "";
+  const amount = parseAmount(amountText);
+
+  if (!amount) {
+    return null;
+  }
+
+  const category = findLabelByKeyword(text, categoryKeywords, "Otros");
+  const paymentMethod = findLabelByKeyword(
+    text,
+    paymentKeywords,
+    paymentMethods[0],
+  );
+
+  return {
+    amount: amount.toFixed(2),
+    amountNumber: amount,
+    category,
+    description: createQuickDescription(text, amountText),
+    date: getToday(),
+    originalText: text,
+    paymentMethod,
+  };
 }
 
 function isSameMonth(dateValue: string, currentDate: Date) {
@@ -222,6 +326,9 @@ function FloatingAddButton() {
 export default function Home() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [form, setForm] = useState<ExpenseForm>(() => createEmptyForm());
+  const [quickText, setQuickText] = useState("");
+  const [quickDraft, setQuickDraft] = useState<QuickExpenseDraft | null>(null);
+  const [quickError, setQuickError] = useState("");
   const [isLoaded, setIsLoaded] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
 
@@ -293,26 +400,63 @@ export default function Home() {
     }));
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    const amount = parseAmount(form.amount);
+  function addExpense(expenseForm: ExpenseForm) {
+    const amount = parseAmount(expenseForm.amount);
 
     if (!amount || amount <= 0) {
-      return;
+      return false;
     }
 
     const newExpense: Expense = {
       id: crypto.randomUUID(),
       amount,
-      category: form.category,
-      description: form.description.trim() || "Sin descripcion",
-      date: form.date,
-      paymentMethod: form.paymentMethod,
+      category: expenseForm.category,
+      description: expenseForm.description.trim() || "Sin descripcion",
+      date: expenseForm.date,
+      paymentMethod: expenseForm.paymentMethod,
     };
 
     setExpenses((currentExpenses) => [newExpense, ...currentExpenses]);
-    setForm(createEmptyForm());
+    return true;
+  }
+
+  function handleQuickParse(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const draft = parseQuickExpense(quickText);
+
+    setQuickDraft(draft);
+    setQuickError(draft ? "" : "No pude detectar un monto. Prueba: taxi 12 yape");
+  }
+
+  function confirmQuickExpense() {
+    if (quickDraft && addExpense(quickDraft)) {
+      setQuickText("");
+      setQuickDraft(null);
+      setQuickError("");
+    }
+  }
+
+  function editQuickExpense() {
+    if (!quickDraft) {
+      return;
+    }
+
+    setForm({
+      amount: quickDraft.amount,
+      category: quickDraft.category,
+      description: quickDraft.description,
+      date: quickDraft.date,
+      paymentMethod: quickDraft.paymentMethod,
+    });
+    window.location.hash = "registro";
+  }
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (addExpense(form)) {
+      setForm(createEmptyForm());
+    }
   }
 
   function deleteExpense(id: string) {
@@ -498,6 +642,114 @@ export default function Home() {
             </AppCard>
           </div>
         </section>
+
+        <AppCard id="rapido">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase text-emerald-700 dark:text-emerald-300">
+                Agregar rapido
+              </p>
+              <h2 className="mt-1 text-xl font-semibold">
+                Escribe como en un chat
+              </h2>
+            </div>
+            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-sky-100 text-sky-700 dark:bg-sky-400/15 dark:text-sky-300">
+              <MessageCircle aria-hidden="true" size={20} />
+            </div>
+          </div>
+
+          <form className="mt-4 grid gap-3" onSubmit={handleQuickParse}>
+            <label className="grid gap-2">
+              <FieldLabel>Frase</FieldLabel>
+              <input
+                className="h-12 rounded-lg border border-slate-200 bg-white px-3 text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:focus:ring-emerald-500/10"
+                onChange={(event) => {
+                  setQuickText(event.target.value);
+                  setQuickError("");
+                }}
+                placeholder="taxi 12 yape"
+                type="text"
+                value={quickText}
+              />
+            </label>
+
+            <div className="flex flex-wrap gap-2 text-xs text-slate-500 dark:text-slate-400">
+              <span className="rounded-md bg-slate-100 px-2 py-1 dark:bg-slate-800">
+                gasté 18 soles en almuerzo
+              </span>
+              <span className="rounded-md bg-slate-100 px-2 py-1 dark:bg-slate-800">
+                mercado 45 efectivo
+              </span>
+            </div>
+
+            <button
+              className="flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-800 transition hover:-translate-y-0.5 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-emerald-100 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:hover:bg-slate-800"
+              type="submit"
+            >
+              <Sparkles aria-hidden="true" size={17} />
+              Detectar gasto
+            </button>
+          </form>
+
+          {quickError ? (
+            <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-400/10 dark:text-amber-200">
+              {quickError}
+            </p>
+          ) : null}
+
+          {quickDraft ? (
+            <div className="mt-4 rounded-lg border border-emerald-100 bg-emerald-50 p-3 dark:border-emerald-400/20 dark:bg-emerald-400/10">
+              <p className="text-xs font-semibold uppercase text-emerald-700 dark:text-emerald-300">
+                Vista previa
+              </p>
+              <div className="mt-3 grid gap-2 text-sm">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-slate-600 dark:text-slate-300">
+                    Monto
+                  </span>
+                  <strong>{formatCurrency(quickDraft.amountNumber)}</strong>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-slate-600 dark:text-slate-300">
+                    Categoria
+                  </span>
+                  <strong>{quickDraft.category}</strong>
+                </div>
+                <div className="flex items-start justify-between gap-3">
+                  <span className="text-slate-600 dark:text-slate-300">
+                    Descripcion
+                  </span>
+                  <strong className="max-w-[65%] text-right">
+                    {quickDraft.description}
+                  </strong>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-slate-600 dark:text-slate-300">
+                    Pago
+                  </span>
+                  <strong>{quickDraft.paymentMethod}</strong>
+                </div>
+              </div>
+
+              <div className="mt-4 grid gap-2 min-[430px]:grid-cols-2">
+                <button
+                  className="h-11 rounded-lg bg-emerald-600 px-4 text-sm font-semibold text-white transition hover:bg-emerald-700 focus:outline-none focus:ring-4 focus:ring-emerald-200"
+                  onClick={confirmQuickExpense}
+                  type="button"
+                >
+                  Confirmar
+                </button>
+                <button
+                  className="h-11 rounded-lg border border-emerald-200 bg-white px-4 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-50 focus:outline-none focus:ring-4 focus:ring-emerald-100 dark:border-emerald-400/30 dark:bg-slate-950 dark:text-emerald-200"
+                  onClick={editQuickExpense}
+                  type="button"
+                >
+                  Editar
+                </button>
+              </div>
+            </div>
+          ) : null}
+        </AppCard>
 
         <section className="grid min-w-0 gap-4 md:grid-cols-[0.9fr_1.1fr]">
           <AppCard id="registro" className="md:sticky md:top-4 md:self-start">
