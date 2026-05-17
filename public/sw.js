@@ -1,5 +1,10 @@
-const CACHE_NAME = "gasti-v1";
-const APP_SHELL = ["/", "/manifest.json", "/gasti-icon.svg"];
+const CACHE_NAME = "gasti-v2";
+const APP_SHELL = [
+  "/manifest.json",
+  "/gasti-icon.svg",
+  "/gasti-icon-192.png",
+  "/gasti-icon-512.png",
+];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -25,6 +30,21 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") {
+    return;
+  }
+
+  if (event.request.mode === "navigate") {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          const responseClone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put("/", responseClone);
+          });
+          return response;
+        })
+        .catch(() => caches.match("/")),
+    );
     return;
   }
 

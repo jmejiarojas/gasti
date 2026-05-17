@@ -191,7 +191,7 @@ function BottomNav() {
   ];
 
   return (
-    <nav className="fixed inset-x-3 bottom-3 z-20 grid grid-cols-4 rounded-lg border border-black/5 bg-white/95 p-1 shadow-[0_18px_45px_rgba(15,23,42,0.18)] backdrop-blur md:hidden dark:border-white/10 dark:bg-slate-950/95">
+    <nav className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] z-20 grid grid-cols-4 rounded-lg border border-black/5 bg-white/95 p-1 shadow-[0_18px_45px_rgba(15,23,42,0.18)] backdrop-blur md:hidden dark:border-white/10 dark:bg-slate-950/95">
       {items.map((item) => (
         <a
           className="flex h-12 flex-col items-center justify-center gap-1 rounded-md text-[11px] font-medium text-slate-500 transition hover:bg-slate-100 hover:text-slate-950 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
@@ -210,7 +210,7 @@ function FloatingAddButton() {
   return (
     <a
       aria-label="Registrar gasto rapido"
-      className="fixed bottom-20 right-4 z-30 grid h-14 w-14 place-items-center rounded-lg bg-emerald-500 text-white shadow-[0_18px_35px_rgba(16,185,129,0.35)] transition hover:-translate-y-1 hover:bg-emerald-600 focus:outline-none focus:ring-4 focus:ring-emerald-200 md:bottom-6 md:right-6 dark:bg-emerald-400 dark:text-slate-950 dark:focus:ring-emerald-400/20"
+      className="fixed bottom-[calc(env(safe-area-inset-bottom)+5rem)] right-4 z-30 grid h-14 w-14 place-items-center rounded-lg bg-emerald-500 text-white shadow-[0_18px_35px_rgba(16,185,129,0.35)] transition hover:-translate-y-1 hover:bg-emerald-600 focus:outline-none focus:ring-4 focus:ring-emerald-200 md:bottom-6 md:right-6 dark:bg-emerald-400 dark:text-slate-950 dark:focus:ring-emerald-400/20"
       href="#registro"
       title="Registrar gasto rapido"
     >
@@ -324,11 +324,11 @@ export default function Home() {
   return (
     <main
       className={cn(
-        "min-h-screen scroll-smooth bg-[#f7f2ea] text-slate-950 transition-colors duration-300 dark:bg-slate-950 dark:text-white",
+        "min-h-dvh scroll-smooth bg-[#f7f2ea] text-slate-950 transition-colors duration-300 dark:bg-slate-950 dark:text-white",
         isDarkMode && "dark",
       )}
     >
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 pb-24 pt-4 sm:px-6 md:gap-6 md:pb-10 lg:px-8">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 pb-[calc(env(safe-area-inset-bottom)+7rem)] pt-4 sm:px-6 md:gap-6 md:pb-10 lg:px-8">
         <header
           className="flex items-center justify-between gap-4 py-2"
           id="inicio"
@@ -370,7 +370,7 @@ export default function Home() {
                   <p className="text-sm font-medium text-emerald-200 dark:text-emerald-700">
                     Gastado este mes
                   </p>
-                  <p className="mt-3 text-4xl font-semibold tracking-normal sm:text-5xl">
+                  <p className="mt-3 text-[clamp(2rem,11vw,3rem)] font-semibold tracking-normal sm:text-5xl">
                     {formatCurrency(totalThisMonth)}
                   </p>
                 </div>
@@ -521,7 +521,7 @@ export default function Home() {
                     S/
                   </span>
                   <input
-                    className="min-w-0 flex-1 bg-transparent text-2xl font-semibold text-slate-950 outline-none placeholder:text-slate-300 dark:text-white dark:placeholder:text-slate-600"
+                    className="min-w-0 flex-1 bg-transparent text-[clamp(1.5rem,8vw,2rem)] font-semibold text-slate-950 outline-none placeholder:text-slate-300 dark:text-white dark:placeholder:text-slate-600"
                     inputMode="decimal"
                     onChange={(event) =>
                       updateForm("amount", event.target.value)
