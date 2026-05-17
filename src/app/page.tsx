@@ -142,7 +142,7 @@ function AppCard({
   return (
     <section
       className={cn(
-        "rounded-lg border border-black/5 bg-white/90 p-4 shadow-[0_18px_45px_rgba(15,23,42,0.08)] backdrop-blur dark:border-white/10 dark:bg-slate-900/80 dark:shadow-none",
+        "min-w-0 rounded-lg border border-black/5 bg-white/90 p-4 shadow-[0_18px_45px_rgba(15,23,42,0.08)] backdrop-blur dark:border-white/10 dark:bg-slate-900/80 dark:shadow-none",
         className,
       )}
       id={id}
@@ -210,7 +210,7 @@ function FloatingAddButton() {
   return (
     <a
       aria-label="Registrar gasto rapido"
-      className="fixed bottom-[calc(env(safe-area-inset-bottom)+5rem)] right-4 z-30 grid h-14 w-14 place-items-center rounded-lg bg-emerald-500 text-white shadow-[0_18px_35px_rgba(16,185,129,0.35)] transition hover:-translate-y-1 hover:bg-emerald-600 focus:outline-none focus:ring-4 focus:ring-emerald-200 md:bottom-6 md:right-6 dark:bg-emerald-400 dark:text-slate-950 dark:focus:ring-emerald-400/20"
+      className="fixed bottom-6 right-6 z-30 hidden h-14 w-14 place-items-center rounded-lg bg-emerald-500 text-white shadow-[0_18px_35px_rgba(16,185,129,0.35)] transition hover:-translate-y-1 hover:bg-emerald-600 focus:outline-none focus:ring-4 focus:ring-emerald-200 md:grid dark:bg-emerald-400 dark:text-slate-950 dark:focus:ring-emerald-400/20"
       href="#registro"
       title="Registrar gasto rapido"
     >
@@ -324,11 +324,11 @@ export default function Home() {
   return (
     <main
       className={cn(
-        "min-h-dvh scroll-smooth bg-[#f7f2ea] text-slate-950 transition-colors duration-300 dark:bg-slate-950 dark:text-white",
+        "min-h-dvh overflow-x-hidden scroll-smooth bg-[#f7f2ea] text-slate-950 transition-colors duration-300 dark:bg-slate-950 dark:text-white",
         isDarkMode && "dark",
       )}
     >
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 pb-[calc(env(safe-area-inset-bottom)+7rem)] pt-4 sm:px-6 md:gap-6 md:pb-10 lg:px-8">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 overflow-x-hidden px-3 pb-[calc(env(safe-area-inset-bottom)+7rem)] pt-4 sm:px-6 md:gap-6 md:pb-10 lg:px-8">
         <header
           className="flex items-center justify-between gap-4 py-2"
           id="inicio"
@@ -360,7 +360,7 @@ export default function Home() {
         </header>
 
         <section
-          className="grid gap-4 md:grid-cols-[1fr_1.1fr]"
+          className="grid min-w-0 gap-4 md:grid-cols-[1fr_1.1fr]"
           id="dashboard"
         >
           <section className="overflow-hidden rounded-lg border border-black/5 bg-slate-950 text-white shadow-[0_18px_45px_rgba(15,23,42,0.18)] dark:border-white/10 dark:bg-white dark:text-slate-950">
@@ -400,7 +400,7 @@ export default function Home() {
             </div>
           </section>
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid min-w-0 gap-4 sm:grid-cols-2">
             <AppCard>
               <div className="flex items-center justify-between gap-3">
                 <h2 className="text-base font-semibold">Por categoria</h2>
@@ -499,7 +499,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="grid gap-4 md:grid-cols-[0.9fr_1.1fr]">
+        <section className="grid min-w-0 gap-4 md:grid-cols-[0.9fr_1.1fr]">
           <AppCard id="registro" className="md:sticky md:top-4 md:self-start">
             <div className="flex items-center justify-between gap-3">
               <div>
@@ -537,14 +537,14 @@ export default function Home() {
 
               <div className="grid gap-2">
                 <FieldLabel>Categoria</FieldLabel>
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 md:grid-cols-2">
+                <div className="grid min-w-0 grid-cols-1 gap-2 min-[430px]:grid-cols-2 md:grid-cols-2">
                   {categories.map((category) => {
                     const isSelected = form.category === category.label;
 
                     return (
                       <button
                         className={cn(
-                          "flex min-h-16 items-center gap-2 rounded-lg border p-3 text-left text-sm font-semibold transition hover:-translate-y-0.5",
+                          "flex min-h-12 min-w-0 items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm font-semibold transition hover:-translate-y-0.5",
                           isSelected
                             ? "border-slate-950 bg-slate-950 text-white shadow-lg shadow-slate-300/50 dark:border-white dark:bg-white dark:text-slate-950 dark:shadow-none"
                             : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:hover:border-slate-500",
@@ -553,8 +553,10 @@ export default function Home() {
                         onClick={() => updateForm("category", category.label)}
                         type="button"
                       >
-                        <span className="text-lg">{category.emoji}</span>
-                        <span className="min-w-0 break-words">
+                        <span className="shrink-0 text-base">
+                          {category.emoji}
+                        </span>
+                        <span className="min-w-0 truncate">
                           {category.label}
                         </span>
                       </button>
@@ -612,7 +614,7 @@ export default function Home() {
               </div>
 
               <button
-                className="flex h-12 items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white shadow-lg shadow-slate-300/60 transition hover:-translate-y-0.5 hover:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-emerald-100 dark:bg-white dark:text-slate-950 dark:shadow-none dark:hover:bg-slate-200"
+                className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white shadow-lg shadow-slate-300/60 transition hover:-translate-y-0.5 hover:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-emerald-100 dark:bg-white dark:text-slate-950 dark:shadow-none dark:hover:bg-slate-200"
                 type="submit"
               >
                 <Plus aria-hidden="true" size={18} />
@@ -622,8 +624,8 @@ export default function Home() {
           </AppCard>
 
           <AppCard id="gastos" className="p-0">
-            <div className="flex items-center justify-between gap-3 border-b border-slate-100 p-4 dark:border-slate-800">
-              <div>
+            <div className="flex min-w-0 items-center justify-between gap-3 border-b border-slate-100 p-4 dark:border-slate-800">
+              <div className="min-w-0">
                 <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
                   Historial
                 </p>
@@ -632,16 +634,20 @@ export default function Home() {
                   {expenses.length === 1 ? "" : "s"}
                 </h2>
               </div>
-              <List aria-hidden="true" className="text-slate-400" size={20} />
+              <List
+                aria-hidden="true"
+                className="shrink-0 text-slate-400"
+                size={20}
+              />
             </div>
 
             {expenses.length === 0 ? (
-              <div className="grid min-h-52 place-items-center p-6 text-center">
-                <div>
+              <div className="grid min-h-40 place-items-center p-5 text-center">
+                <div className="min-w-0">
                   <div className="mx-auto grid h-12 w-12 place-items-center rounded-lg bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-300">
                     <WalletCards aria-hidden="true" size={22} />
                   </div>
-                  <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">
+                  <p className="mt-4 max-w-full text-sm text-slate-500 dark:text-slate-400">
                     Aun no hay gastos registrados.
                   </p>
                 </div>
